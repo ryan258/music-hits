@@ -2,6 +2,7 @@ import fs from 'fs';
 import { program } from 'commander';
 import dotenv from 'dotenv';
 import { OpenAI } from 'openai';
+import path from 'path'; // Move path import to the top
 
 // Load environment variables
 dotenv.config();
@@ -93,11 +94,25 @@ function formatAsMarkdown(year, genre, data) {
     return markdown;
 }
 
-function saveToFile(content, year, genre) {
+// Utility to log responses as Markdown in /logs
+function saveToLogsDir(content, year, genre) {
+    const logsDir = './logs';
+    if (!fs.existsSync(logsDir)) {
+        fs.mkdirSync(logsDir, { recursive: true });
+    }
     const filename = `${genre.toLowerCase().replace(/\s+/g, '_')}_hits_${year}.md`;
+    const filePath = `${logsDir}/${filename}`;
+    fs.writeFileSync(filePath, content, 'utf8');
+    return filePath;
+}
+
+function saveToFile(content, year, genre) {
+    // Save ONLY to /logs directory in the classic format
+    const filePath = saveToLogsDir(content, year, genre);
     try {
-        fs.writeFileSync(filename, content, 'utf8');
-        console.log(`\uD83D\uDCBE Data saved to ${filename}`);
+        // Remove legacy root save for clarity
+        // fs.writeFileSync(`${genre.toLowerCase().replace(/\s+/g, '_')}_hits_${year}.md`, content, 'utf8');
+        console.log(`\uD83D\uDCBE Data saved to ${filePath}`);
     } catch (error) {
         console.error(`\u274C Failed to save file: ${error.message}`);
     }
