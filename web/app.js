@@ -26,18 +26,30 @@ if (!OPENAI_API_KEY) {
 const client = new OpenAI({ apiKey: OPENAI_API_KEY });
 
 // Utility to log responses as Markdown in /logs
-function logResponseMarkdown(content, year, genre, filenamePrefix = 'response') {
+function classicLogFilename(genre, year) {
+  // Match CLI: lowercase, replace spaces with _, only allow a-z, 0-9, _
+  const genrePart = String(genre).toLowerCase().replace(/\s+/g, '_').replace(/[^a-z0-9_]/g, '');
+  const yearPart = String(year).replace(/[^0-9]/g, '');
+  return `${genrePart}_hits_${yearPart}.md`;
+}
+
+function logResponseMarkdown(content, year, genre) {
   const logsDir = path.resolve(__dirname, '../logs');
   if (!fs.existsSync(logsDir)) {
     fs.mkdirSync(logsDir, { recursive: true });
   }
-  let filename;
-  if (year && genre) {
-    filename = `${genre.toLowerCase().replace(/\s+/g, '_')}_hits_${year}.md`;
-  } else {
-    filename = `${filenamePrefix}.md`;
+  // DEBUG: Print values before filename generation
+  console.log('[LOGGING DEBUG] genre:', genre, '| year:', year);
+  const filename = classicLogFilename(genre, year);
+  console.log('[LOGGING DEBUG] Computed filename:', filename);
+  // Only allow files that match the pattern: <genre>_hits_<year>.md
+  if (!/^([a-z0-9_]+)_hits_([0-9]{4})\.md$/.test(filename)) {
+    const errorMsg = `[LOGGING ERROR] Refusing to write file with invalid filename: '${filename}'. genre='${genre}', year='${year}'. Log NOT written.`;
+    console.error(errorMsg);
+    throw new Error(errorMsg);
   }
   const filePath = path.join(logsDir, filename);
+  console.log('[LOGGING] Writing to file:', filePath);
   fs.writeFileSync(filePath, content, 'utf8');
 }
 
@@ -63,14 +75,15 @@ async function getMusicHits(year, genre) {
 }
 
 app.post('/api/hits', async (req, res) => {
-  const { year, genre } = req.body;
+  console.log('[API] Incoming request body:', req.body);
+  let { year, genre } = req.body;
   if (!year || !genre) {
-    const errorMsg = 'Missing year or genre.';
-    logResponseMarkdown(`# Error\n${errorMsg}\nRequest: ${JSON.stringify(req.body, null, 2)}`);
-    return res.status(400).json({ error: errorMsg });
+    const errorMsg = 'Missing or invalid year or genre.';
+    console.error('[API ERROR]', errorMsg, 'Request body:', req.body);
+    res.status(400).json({ error: errorMsg });
+    return;
   }
   const hits = await getMusicHits(year, genre);
-  // Log the response as Markdown
   let markdownContent = `# Music Hits\n**Year:** ${year}\n**Genre:** ${genre}\n\n`;
   if (hits.error) {
     markdownContent += `**Error:** ${hits.error}`;
@@ -79,7 +92,12 @@ app.post('/api/hits', async (req, res) => {
       markdownContent += `## ${artist}\n- **Songs:** ${(hits[artist].songs || []).join(', ')}\n- **Career Phase:** ${hits[artist].career_phase || ''}\n`;
     }
   }
-  logResponseMarkdown(markdownContent, year, genre, 'hits');
+  try {
+    logResponseMarkdown(markdownContent, year, genre);
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+    return;
+  }
   res.json(hits);
 });
 
