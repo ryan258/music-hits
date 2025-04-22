@@ -12,7 +12,9 @@ Music Hits CLI is a command-line tool that fetches and formats information about
 ## 🛠️ Installation
 ### Prerequisites
 - Node.js (v16+ recommended)
-- An OpenAI API key
+- An OpenAI API key (set in `.env` as `OPENAI_API_KEY`)
+- Optional: `OPENAI_MODEL`, `API_URL`, `MODEL_NAME` for custom model endpoints
+- A `.gitignore` is included to exclude `node_modules/` and `.env`
 
 ### Setup
 1. Clone the repository:
@@ -53,6 +55,26 @@ Example:
 rock_hits_1990.md
 ```
 
+### Example Generated File
+```md
+# 🎵 Rock Hits from 1990
+
+## 🎤 Eric Clapton
+*In 1990, Clapton experienced a significant resurgence in his career with…*
+- 🎵 Tears in Heaven
+- 🎵 Wonderful Tonight
+
+## 🎤 Nirvana
+*Though 'Nevermind' was released in late 1991, the grunge movement began…*
+- 🎵 Smells Like Teen Spirit
+- 🎵 Come as You Are
+```
+
+## 🐞 Troubleshooting
+- If you see `OPENAI_API_KEY is not set`, ensure your `.env` file exists and is formatted correctly.
+- JSON parse errors typically indicate the model returned non-JSON. Check `OPENAI_MODEL`, `API_URL`, and network connectivity.
+- For other issues, please open an issue on GitHub or contact the maintainer.
+
 ## 🛠️ Development
 To contribute or modify the project:
 1. Install dependencies: `npm install`
@@ -67,4 +89,3 @@ Pull requests are welcome! For major changes, please open an issue first to disc
 
 ## 📧 Contact
 For any inquiries, contact [ryanleejwebdev@gmail.com](mailto:ryanleejwebdev@gmail.com).
-
