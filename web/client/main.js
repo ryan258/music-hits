@@ -3,7 +3,7 @@ const output = document.getElementById('output');
 
 form.addEventListener('submit', async (e) => {
   e.preventDefault();
-  output.innerHTML = '<p>🔍 Fetching music hits...</p>';
+  output.innerHTML = '<p class="text-gray-500">🔍 Fetching music hits...</p>';
   const year = document.getElementById('year').value;
   const genre = document.getElementById('genre').value;
 
@@ -15,25 +15,28 @@ form.addEventListener('submit', async (e) => {
     });
     const data = await res.json();
     if (data.error) {
-      output.innerHTML = `<p style="color:red;">❌ ${data.error}</p>`;
+      output.innerHTML = `<p class='text-red-600'>❌ ${data.error}</p>`;
     } else {
-      output.innerHTML = renderMarkdown(year, genre, data);
+      output.innerHTML = renderGrid(data);
     }
   } catch (err) {
-    output.innerHTML = `<p style="color:red;">❌ ${err.message}</p>`;
+    output.innerHTML = `<p class='text-red-600'>❌ ${err.message}</p>`;
   }
 });
 
-function renderMarkdown(year, genre, data) {
-  let md = `<h2>🎵 ${genre.charAt(0).toUpperCase() + genre.slice(1)} Hits from ${year}</h2>`;
+function renderGrid(data) {
+  let cards = '';
   for (const [artist, info] of Object.entries(data)) {
     if (!info || !Array.isArray(info.songs)) continue;
-    md += `<h3>🎤 ${artist}</h3>`;
-    md += `<em>${info.career_phase || ''}</em><ul>`;
-    info.songs.forEach(song => {
-      md += `<li>🎵 ${song}</li>`;
-    });
-    md += `</ul>`;
+    cards += `
+      <div class="bg-white rounded-xl shadow p-5 flex flex-col gap-2">
+        <h3 class="text-lg font-bold text-blue-700 flex items-center gap-1">🎤 ${artist}</h3>
+        <em class="text-gray-500 text-sm mb-2">${info.career_phase || ''}</em>
+        <ul class="list-disc pl-5">
+          ${info.songs.map(song => `<li class="flex items-center gap-1">🎵 <span>${song}</span></li>`).join('')}
+        </ul>
+      </div>
+    `;
   }
-  return md;
+  return cards || '<p>No results found.</p>';
 }
